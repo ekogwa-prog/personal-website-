@@ -1,0 +1,119 @@
+<!DOCTYPE html><html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Gwany | Secure Firebase Dashboard</title><link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet"><style>
+body{
+margin:0;
+font-family:'Poppins',sans-serif;
+background:#050816;
+color:white;
+}
+
+.container{max-width:1000px;margin:auto;padding:20px;}
+.card{background:rgba(255,255,255,0.06);padding:20px;border-radius:16px;margin:15px 0;}
+input,button{width:100%;padding:12px;margin:8px 0;border:none;border-radius:10px;}
+button{background:#7c3aed;color:white;font-weight:600;cursor:pointer;}
+.hidden{display:none;}
+h1{font-family:'Orbitron';text-align:center;}
+</style></head>
+<body><div class="container"><h1>GWANY DASHBOARD</h1><div id="loginBox" class="card">
+<h2>Login</h2>
+<input id="email" placeholder="Email" />
+<input id="password" type="password" placeholder="Password" />
+<button onclick="login()">Login</button>
+</div><div id="dashboard" class="hidden"><div class="card">
+<h2>Upload Song</h2>
+<input id="title" placeholder="Song Title" />
+<input id="file" type="file" />
+<button onclick="uploadSong()">Upload</button>
+</div><div class="card">
+<h2>Analytics</h2>
+<p id="stats">Loading...</p>
+</div><button onclick="logout()">Logout</button>
+
+</div></div><script type="module">
+
+// Firebase Modular SDK
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
+import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-analytics.js";
+import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js";
+import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-storage.js";
+
+// Firebase config
+const firebaseConfig = {
+apiKey: "AIzaSyBf5_fM_lQpqm48IlMILDrNMeZYhITnhQs",
+authDomain: "prodigy-org.firebaseapp.com",
+projectId: "prodigy-org",
+storageBucket: "prodigy-org.firebasestorage.app",
+messagingSenderId: "1074868332867",
+appId: "1:1074868332867:web:17cbf9c0a59e81798d67f6",
+measurementId: "G-7FLM1RF7BM"
+};
+
+// Init Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const storage = getStorage(app);
+
+const ADMIN_EMAIL = "gwanymusic@gmail.com";
+let lastUpload = 0;
+
+// LOGIN
+window.login = async function(){
+const email = document.getElementById("email").value;
+const password = document.getElementById("password").value;
+
+try{
+const userCred = await signInWithEmailAndPassword(auth,email,password);
+if(userCred.user.email !== ADMIN_EMAIL){
+alert("Unauthorized");await signOut(auth);return;
+}
+
+document.getElementById("loginBox").classList.add("hidden");
+document.getElementById("dashboard").classList.remove("hidden");
+loadStats();
+}catch(e){alert(e.message);}
+}
+
+// UPLOAD SONG
+window.uploadSong = async function(){
+const now = Date.now();
+if(now - lastUpload < 30000){alert("Wait 30 seconds");return;}
+
+const file = document.getElementById("file").files[0];
+const title = document.getElementById("title").value;
+
+if(!file || !title){alert("Fill all fields");return;}
+
+try{
+const storageRef = ref(storage,"songs/" + file.name);
+await uploadBytes(storageRef,file);
+const url = await getDownloadURL(storageRef);
+
+await addDoc(collection(db,"songs"),{
+title,
+url,
+plays:0,
+createdAt:new Date().toISOString()
+});
+
+lastUpload = now;
+alert("Uploaded successfully");
+}catch(e){alert(e.message);}
+}
+
+// ANALYTICS
+async function loadStats(){
+const snap = await getDocs(collection(db,"songs"));
+document.getElementById("stats").innerText = "Total Songs: " + snap.size;
+}
+
+// LOGOUT
+window.logout = function(){signOut(auth).then(()=>location.reload());}
+
+</script></body>
+</html>
