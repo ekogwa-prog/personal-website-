@@ -1,119 +1,1365 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Gwany | Secure Firebase Dashboard</title><link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet"><style>
-body{
-margin:0;
-font-family:'Poppins',sans-serif;
-background:#050816;
-color:white;
+<title>Gwany | Music Platform</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-primary: #050816;
+  --bg-secondary: #0a0f1e;
+  --bg-card: rgba(255,255,255,0.04);
+  --bg-card-hover: rgba(255,255,255,0.08);
+  --accent: #7c3aed;
+  --accent-light: #a78bfa;
+  --accent-dark: #5b21b6;
+  --success: #10b981;
+  --error: #ef4444;
+  --warning: #f59e0b;
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --border: rgba(255,255,255,0.08);
+  --shadow: 0 8px 32px rgba(0,0,0,0.4);
+  --shadow-glow: 0 0 40px rgba(124,58,237,0.15);
+  --radius: 16px;
+  --radius-sm: 10px;
+  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.container{max-width:1000px;margin:auto;padding:20px;}
-.card{background:rgba(255,255,255,0.06);padding:20px;border-radius:16px;margin:15px 0;}
-input,button{width:100%;padding:12px;margin:8px 0;border:none;border-radius:10px;}
-button{background:#7c3aed;color:white;font-weight:600;cursor:pointer;}
-.hidden{display:none;}
-h1{font-family:'Orbitron';text-align:center;}
-</style></head>
-<body><div class="container"><h1>GWANY DASHBOARD</h1><div id="loginBox" class="card">
-<h2>Login</h2>
-<input id="email" placeholder="Email" />
-<input id="password" type="password" placeholder="Password" />
-<button onclick="login()">Login</button>
-</div><div id="dashboard" class="hidden"><div class="card">
-<h2>Upload Song</h2>
-<input id="title" placeholder="Song Title" />
-<input id="file" type="file" />
-<button onclick="uploadSong()">Upload</button>
-</div><div class="card">
-<h2>Analytics</h2>
-<p id="stats">Loading...</p>
-</div><button onclick="logout()">Logout</button>
+* { margin: 0; padding: 0; box-sizing: border-box; }
 
-</div></div><script type="module">
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+  overflow-x: hidden;
+  line-height: 1.6;
+}
 
-// Firebase Modular SDK
+/* Animated background */
+.bg-mesh {
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  z-index: -1;
+  background: 
+    radial-gradient(ellipse at 20% 80%, rgba(124,58,237,0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(167,139,250,0.05) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 50%, rgba(5,8,22,0.9) 0%, var(--bg-primary) 100%);
+}
+
+.bg-mesh::before {
+  content: '';
+  position: absolute;
+  top: -50%; left: -50%; width: 200%; height: 200%;
+  background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%237c3aed' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  animation: meshMove 20s linear infinite;
+  opacity: 0.5;
+}
+
+@keyframes meshMove {
+  0% { transform: translate(0, 0); }
+  100% { transform: translate(-60px, -60px); }
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+  position: relative;
+  z-index: 1;
+}
+
+/* Header */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 0 40px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 40px;
+}
+
+.logo {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 2rem;
+  font-weight: 900;
+  background: linear-gradient(135deg, var(--accent-light), var(--accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: 2px;
+  text-shadow: 0 0 30px rgba(124,58,237,0.3);
+}
+
+.logo span { color: var(--accent-light); -webkit-text-fill-color: var(--accent-light); }
+
+.user-badge {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 50px;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.user-badge .avatar {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 0.75rem;
+}
+
+/* Cards */
+.card {
+  background: var(--bg-card);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 28px;
+  margin-bottom: 24px;
+  transition: var(--transition);
+  position: relative;
+  overflow: hidden;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(124,58,237,0.3), transparent);
+}
+
+.card:hover {
+  background: var(--bg-card-hover);
+  border-color: rgba(124,58,237,0.2);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-glow);
+}
+
+.card-title {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.card-title .icon {
+  width: 36px; height: 36px;
+  border-radius: var(--radius-sm);
+  background: rgba(124,58,237,0.15);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem;
+}
+
+/* Form Elements */
+.input-group {
+  margin-bottom: 16px;
+  position: relative;
+}
+
+.input-group label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+  transition: var(--transition);
+}
+
+.input-group:focus-within label {
+  color: var(--accent-light);
+}
+
+input, select, textarea {
+  width: 100%;
+  padding: 14px 16px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.95rem;
+  transition: var(--transition);
+  outline: none;
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: var(--accent);
+  background: rgba(124,58,237,0.05);
+  box-shadow: 0 0 0 3px rgba(124,58,237,0.1);
+}
+
+input::placeholder { color: var(--text-muted); }
+
+input[type="file"] {
+  padding: 10px;
+  cursor: pointer;
+}
+
+input[type="file"]::-webkit-file-upload-button {
+  background: var(--accent);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  margin-right: 12px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: var(--transition);
+}
+
+input[type="file"]::-webkit-file-upload-button:hover {
+  background: var(--accent-dark);
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 24px;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+  color: white;
+  box-shadow: 0 4px 20px rgba(124,58,237,0.3);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(124,58,237,0.4);
+}
+
+.btn-primary:active { transform: translateY(0); }
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-secondary {
+  background: rgba(255,255,255,0.05);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+}
+
+.btn-secondary:hover {
+  background: rgba(255,255,255,0.1);
+  color: var(--text-primary);
+  border-color: rgba(124,58,237,0.3);
+}
+
+.btn-danger {
+  background: rgba(239,68,68,0.1);
+  color: var(--error);
+  border: 1px solid rgba(239,68,68,0.2);
+}
+
+.btn-danger:hover {
+  background: rgba(239,68,68,0.2);
+}
+
+.btn-sm { padding: 10px 16px; font-size: 0.875rem; }
+
+.btn-group {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* Auth Box */
+.auth-container {
+  max-width: 420px;
+  margin: 80px auto;
+}
+
+.auth-container .logo {
+  text-align: center;
+  margin-bottom: 40px;
+  font-size: 2.5rem;
+}
+
+.auth-container .subtitle {
+  text-align: center;
+  color: var(--text-secondary);
+  margin-bottom: 32px;
+  font-size: 1rem;
+}
+
+/* Stats Grid */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.stat-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  text-align: center;
+  transition: var(--transition);
+}
+
+.stat-card:hover {
+  background: var(--bg-card-hover);
+  border-color: rgba(124,58,237,0.2);
+}
+
+.stat-value {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 2.5rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--accent-light), var(--accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 8px;
+}
+
+.stat-label {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+/* Songs List */
+.songs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.song-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  transition: var(--transition);
+  position: relative;
+}
+
+.song-card:hover {
+  background: var(--bg-card-hover);
+  border-color: rgba(124,58,237,0.2);
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-glow);
+}
+
+.song-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  margin-bottom: 16px;
+}
+
+.song-title {
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: var(--text-primary);
+  word-break: break-word;
+}
+
+.song-meta {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.song-plays {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: rgba(124,58,237,0.1);
+  border-radius: 20px;
+  font-size: 0.8rem;
+  color: var(--accent-light);
+  font-weight: 500;
+}
+
+.song-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.song-actions .btn {
+  flex: 1;
+  padding: 10px;
+  font-size: 0.85rem;
+}
+
+/* Audio Player */
+.audio-player {
+  width: 100%;
+  margin-top: 12px;
+  border-radius: var(--radius-sm);
+  height: 40px;
+}
+
+.audio-player::-webkit-media-controls-panel {
+  background: rgba(124,58,237,0.1);
+}
+
+/* Toast Notifications */
+.toast-container {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 380px;
+}
+
+.toast {
+  padding: 16px 20px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  animation: slideIn 0.3s ease, fadeOut 0.3s ease 4.7s forwards;
+  backdrop-filter: blur(12px);
+}
+
+.toast.success { border-left: 3px solid var(--success); }
+.toast.error { border-left: 3px solid var(--error); }
+.toast.warning { border-left: 3px solid var(--warning); }
+.toast.info { border-left: 3px solid var(--accent); }
+
+@keyframes slideIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes fadeOut {
+  to { opacity: 0; transform: translateX(100%); }
+}
+
+/* Loading States */
+.loading-overlay {
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(5,8,22,0.8);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s;
+}
+
+.loading-overlay.active {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.spinner {
+  width: 48px; height: 48px;
+  border: 3px solid rgba(124,58,237,0.2);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.btn-spinner {
+  width: 18px; height: 18px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  display: none;
+}
+
+.btn.loading .btn-spinner { display: block; }
+.btn.loading .btn-text { opacity: 0.7; }
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-secondary);
+}
+
+.empty-state .icon {
+  font-size: 3rem;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.empty-state h3 {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 1.25rem;
+  margin-bottom: 8px;
+  color: var(--text-primary);
+}
+
+/* Hidden */
+.hidden { display: none !important; }
+
+/* Progress Bar */
+.progress-bar {
+  width: 100%;
+  height: 4px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 12px;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--accent-light));
+  border-radius: 2px;
+  transition: width 0.3s ease;
+  width: 0%;
+}
+
+/* File Info */
+.file-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: rgba(124,58,237,0.05);
+  border: 1px solid rgba(124,58,237,0.1);
+  border-radius: var(--radius-sm);
+  margin-top: 8px;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .container { padding: 16px; }
+  .header { flex-direction: column; gap: 16px; text-align: center; }
+  .logo { font-size: 1.75rem; }
+  .stats-grid { grid-template-columns: 1fr; }
+  .songs-grid { grid-template-columns: 1fr; }
+  .btn-group { flex-direction: column; }
+  .auth-container { margin: 40px auto; padding: 0 16px; }
+  .toast-container { left: 16px; right: 16px; max-width: none; }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: var(--bg-primary); }
+::-webkit-scrollbar-thumb { background: var(--accent-dark); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+/* Selection */
+::selection {
+  background: rgba(124,58,237,0.3);
+  color: var(--text-primary);
+}
+</style>
+</head>
+<body>
+<div class="bg-mesh"></div>
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+</div>
+<div class="toast-container" id="toastContainer"></div>
+
+<div class="container">
+  <!-- AUTH VIEW -->
+  <div id="authView">
+    <div class="auth-container">
+      <div class="logo">GWANY <span>MUSIC</span></div>
+      <p class="subtitle">Professional music distribution platform</p>
+
+      <div class="card">
+        <div class="card-title">
+          <div class="icon">🔐</div>
+          Account Access
+        </div>
+
+        <div class="input-group">
+          <label for="email">Email Address</label>
+          <input id="email" type="email" placeholder="admin@example.com" autocomplete="email" />
+        </div>
+
+        <div class="input-group">
+          <label for="password">Password</label>
+          <input id="password" type="password" placeholder="Min 6 characters" autocomplete="current-password" />
+        </div>
+
+        <div class="btn-group" style="margin-top: 8px;">
+          <button class="btn btn-primary" id="loginBtn" onclick="login()">
+            <div class="btn-spinner"></div>
+            <span class="btn-text">Sign In</span>
+          </button>
+          <button class="btn btn-secondary" id="signupBtn" onclick="signup()">
+            <div class="btn-spinner"></div>
+            <span class="btn-text">Create Account</span>
+          </button>
+        </div>
+
+        <p style="text-align: center; margin-top: 16px; font-size: 0.8rem; color: var(--text-muted);">
+          Only authorized administrators can access the dashboard
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- DASHBOARD VIEW -->
+  <div id="dashboardView" class="hidden">
+    <div class="header">
+      <div class="logo">GWANY <span>MUSIC</span></div>
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <div class="user-badge" id="userBadge">
+          <div class="avatar" id="userAvatar">A</div>
+          <span id="userEmail">admin@gwany.com</span>
+        </div>
+        <button class="btn btn-danger btn-sm" onclick="logout()">Logout</button>
+      </div>
+    </div>
+
+    <!-- Stats Section -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-value" id="statTotalSongs">0</div>
+        <div class="stat-label">Total Songs</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="statTotalPlays">0</div>
+        <div class="stat-label">Total Plays</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="statUploadsToday">0</div>
+        <div class="stat-label">Uploads Today</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="statStorageUsed">0</div>
+        <div class="stat-label">Storage Used (MB)</div>
+      </div>
+    </div>
+
+    <!-- Upload Section -->
+    <div class="card">
+      <div class="card-title">
+        <div class="icon">🎵</div>
+        Upload New Track
+      </div>
+
+      <div class="input-group">
+        <label for="songTitle">Song Title *</label>
+        <input id="songTitle" placeholder="Enter song title" maxlength="100" />
+      </div>
+
+      <div class="input-group">
+        <label for="songArtist">Artist Name</label>
+        <input id="songArtist" placeholder="Enter artist name" maxlength="100" />
+      </div>
+
+      <div class="input-group">
+        <label for="songGenre">Genre</label>
+        <select id="songGenre">
+          <option value="">Select genre...</option>
+          <option value="Hip Hop">Hip Hop</option>
+          <option value="R&B">R&B</option>
+          <option value="Pop">Pop</option>
+          <option value="Rock">Rock</option>
+          <option value="Electronic">Electronic</option>
+          <option value="Jazz">Jazz</option>
+          <option value="Classical">Classical</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+
+      <div class="input-group">
+        <label for="songFile">Audio File * (MP3, WAV, FLAC, OGG max 50MB)</label>
+        <input id="songFile" type="file" accept="audio/mpeg,audio/wav,audio/flac,audio/ogg" />
+        <div id="fileInfo" class="file-info hidden">
+          <span>📄</span>
+          <span id="fileName">No file selected</span>
+          <span id="fileSize" style="margin-left: auto; color: var(--accent-light);"></span>
+        </div>
+      </div>
+
+      <div class="progress-bar hidden" id="uploadProgress">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+
+      <button class="btn btn-primary" id="uploadBtn" onclick="uploadSong()" style="margin-top: 8px; width: 100%;">
+        <div class="btn-spinner"></div>
+        <span class="btn-text">🚀 Upload Track</span>
+      </button>
+
+      <p id="uploadStatus" style="text-align: center; margin-top: 12px; font-size: 0.85rem; color: var(--text-muted);"></p>
+    </div>
+
+    <!-- Songs Library -->
+    <div class="card">
+      <div class="card-title" style="justify-content: space-between;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div class="icon">🎧</div>
+          Music Library
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="loadSongs()">🔄 Refresh</button>
+      </div>
+
+      <div id="songsContainer">
+        <div class="empty-state">
+          <div class="icon">🎼</div>
+          <h3>No tracks yet</h3>
+          <p>Upload your first song to get started</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-analytics.js";
-import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js";
-import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-storage.js";
+import { 
+  getAuth, 
+  createUserWithEmailAndPassword, 
+  signInWithEmailAndPassword, 
+  signOut, 
+  onAuthStateChanged,
+  updateProfile
+} from "https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js";
+import { 
+  getFirestore, 
+  collection, 
+  addDoc, 
+  getDocs, 
+  deleteDoc, 
+  doc, 
+  updateDoc,
+  query,
+  orderBy,
+  serverTimestamp,
+  where,
+  increment
+} from "https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js";
+import { 
+  getStorage, 
+  ref, 
+  uploadBytesResumable, 
+  getDownloadURL,
+  deleteObject,
+  getMetadata
+} from "https://www.gstatic.com/firebasejs/12.13.0/firebase-storage.js";
 
-// Firebase config
+// ==================== CONFIG ====================
 const firebaseConfig = {
-apiKey: "AIzaSyBf5_fM_lQpqm48IlMILDrNMeZYhITnhQs",
-authDomain: "prodigy-org.firebaseapp.com",
-projectId: "prodigy-org",
-storageBucket: "prodigy-org.firebasestorage.app",
-messagingSenderId: "1074868332867",
-appId: "1:1074868332867:web:17cbf9c0a59e81798d67f6",
-measurementId: "G-7FLM1RF7BM"
+  apiKey: "AIzaSyBf5_fM_lQpqm48IlMILDrNMeZYhITnhQs",
+  authDomain: "prodigy-org.firebaseapp.com",
+  projectId: "prodigy-org",
+  storageBucket: "prodigy-org.firebasestorage.app",
+  messagingSenderId: "1074868332867",
+  appId: "1:1074868332867:web:17cbf9c0a59e81798d67f6",
+  measurementId: "G-7FLM1RF7BM"
 };
 
-// Init Firebase
+const ADMIN_EMAIL = "gwanymusic@gmail.com";
+const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+const ALLOWED_TYPES = ['audio/mpeg', 'audio/wav', 'audio/flac', 'audio/ogg', 'audio/x-wav', 'audio/mp3'];
+const ALLOWED_EXTENSIONS = ['.mp3', '.wav', '.flac', '.ogg'];
+const UPLOAD_COOLDOWN = 30000; // 30 seconds
+
+// ==================== INIT ====================
 const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
 const auth = getAuth(app);
 const db = getFirestore(app);
 const storage = getStorage(app);
 
-const ADMIN_EMAIL = "gwanymusic@gmail.com";
+// ==================== STATE ====================
 let lastUpload = 0;
+let currentUser = null;
+let songsData = [];
 
-// LOGIN
-window.login = async function(){
-const email = document.getElementById("email").value;
-const password = document.getElementById("password").value;
+// ==================== TOAST SYSTEM ====================
+function showToast(message, type = 'info') {
+  const container = document.getElementById('toastContainer');
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
 
-try{
-const userCred = await signInWithEmailAndPassword(auth,email,password);
-if(userCred.user.email !== ADMIN_EMAIL){
-alert("Unauthorized");await signOut(auth);return;
+  const icons = {
+    success: '✅',
+    error: '❌',
+    warning: '⚠️',
+    info: 'ℹ️'
+  };
+
+  toast.innerHTML = `${icons[type] || 'ℹ️'} <span>${message}</span>`;
+  container.appendChild(toast);
+
+  setTimeout(() => {
+    toast.remove();
+  }, 5000);
 }
 
-document.getElementById("loginBox").classList.add("hidden");
-document.getElementById("dashboard").classList.remove("hidden");
-loadStats();
-}catch(e){alert(e.message);}
+// ==================== LOADING ====================
+function setLoading(loading) {
+  const overlay = document.getElementById('loadingOverlay');
+  if (loading) overlay.classList.add('active');
+  else overlay.classList.remove('active');
 }
 
-// UPLOAD SONG
-window.uploadSong = async function(){
-const now = Date.now();
-if(now - lastUpload < 30000){alert("Wait 30 seconds");return;}
+function setButtonLoading(btnId, loading) {
+  const btn = document.getElementById(btnId);
+  if (btn) {
+    btn.disabled = loading;
+    btn.classList.toggle('loading', loading);
+  }
+}
 
-const file = document.getElementById("file").files[0];
-const title = document.getElementById("title").value;
+// ==================== VALIDATION ====================
+function validateEmail(email) {
+  const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return re.test(email);
+}
 
-if(!file || !title){alert("Fill all fields");return;}
+function validatePassword(password) {
+  return password.length >= 6;
+}
 
-try{
-const storageRef = ref(storage,"songs/" + file.name);
-await uploadBytes(storageRef,file);
-const url = await getDownloadURL(storageRef);
+function validateFile(file) {
+  if (!file) return { valid: false, error: 'Please select an audio file' };
 
-await addDoc(collection(db,"songs"),{
-title,
-url,
-plays:0,
-createdAt:new Date().toISOString()
+  if (file.size > MAX_FILE_SIZE) {
+    return { valid: false, error: `File too large. Max size: ${MAX_FILE_SIZE / 1024 / 1024}MB` };
+  }
+
+  const ext = '.' + file.name.split('.').pop().toLowerCase();
+  if (!ALLOWED_EXTENSIONS.includes(ext)) {
+    return { valid: false, error: `Invalid file type. Allowed: ${ALLOWED_EXTENSIONS.join(', ')}` };
+  }
+
+  return { valid: true };
+}
+
+function sanitizeInput(input) {
+  const div = document.createElement('div');
+  div.textContent = input;
+  return div.innerHTML;
+}
+
+// ==================== AUTH ====================
+window.signup = async function() {
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value;
+
+  if (!email || !password) {
+    showToast('Please fill in all fields', 'warning');
+    return;
+  }
+
+  if (!validateEmail(email)) {
+    showToast('Please enter a valid email address', 'warning');
+    return;
+  }
+
+  if (!validatePassword(password)) {
+    showToast('Password must be at least 6 characters', 'warning');
+    return;
+  }
+
+  setButtonLoading('signupBtn', true);
+
+  try {
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    showToast('Account created successfully! Please sign in.', 'success');
+    document.getElementById('password').value = '';
+  } catch (error) {
+    let message = 'Failed to create account';
+    switch (error.code) {
+      case 'auth/email-already-in-use': message = 'Email already registered'; break;
+      case 'auth/invalid-email': message = 'Invalid email address'; break;
+      case 'auth/weak-password': message = 'Password is too weak'; break;
+      default: message = error.message;
+    }
+    showToast(message, 'error');
+  } finally {
+    setButtonLoading('signupBtn', false);
+  }
+};
+
+window.login = async function() {
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value;
+
+  if (!email || !password) {
+    showToast('Please fill in all fields', 'warning');
+    return;
+  }
+
+  setButtonLoading('loginBtn', true);
+
+  try {
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    // Auth state listener will handle the rest
+  } catch (error) {
+    let message = 'Login failed';
+    switch (error.code) {
+      case 'auth/user-not-found': message = 'Account not found'; break;
+      case 'auth/wrong-password': message = 'Incorrect password'; break;
+      case 'auth/invalid-credential': message = 'Invalid email or password'; break;
+      case 'auth/too-many-requests': message = 'Too many attempts. Try again later'; break;
+      default: message = error.message;
+    }
+    showToast(message, 'error');
+    setButtonLoading('loginBtn', false);
+  }
+};
+
+window.logout = async function() {
+  try {
+    await signOut(auth);
+    showToast('Signed out successfully', 'info');
+  } catch (error) {
+    showToast('Error signing out', 'error');
+  }
+};
+
+// ==================== AUTH STATE ====================
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    // Check admin
+    if (user.email !== ADMIN_EMAIL) {
+      showToast('Access denied. Admin privileges required.', 'error');
+      signOut(auth);
+      return;
+    }
+
+    currentUser = user;
+    showDashboard(user);
+  } else {
+    currentUser = null;
+    showAuth();
+  }
 });
 
-lastUpload = now;
-alert("Uploaded successfully");
-}catch(e){alert(e.message);}
+function showAuth() {
+  document.getElementById('authView').classList.remove('hidden');
+  document.getElementById('dashboardView').classList.add('hidden');
+  setLoading(false);
 }
 
-// ANALYTICS
-async function loadStats(){
-const snap = await getDocs(collection(db,"songs"));
-document.getElementById("stats").innerText = "Total Songs: " + snap.size;
+function showDashboard(user) {
+  document.getElementById('authView').classList.add('hidden');
+  document.getElementById('dashboardView').classList.remove('hidden');
+
+  // Update user badge
+  document.getElementById('userEmail').textContent = user.email;
+  document.getElementById('userAvatar').textContent = user.email.charAt(0).toUpperCase();
+
+  setButtonLoading('loginBtn', false);
+  setButtonLoading('signupBtn', false);
+
+  // Load data
+  loadStats();
+  loadSongs();
 }
 
-// LOGOUT
-window.logout = function(){signOut(auth).then(()=>location.reload());}
+// ==================== FILE INPUT HANDLER ====================
+document.getElementById('songFile').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  const fileInfo = document.getElementById('fileInfo');
+  const fileName = document.getElementById('fileName');
+  const fileSize = document.getElementById('fileSize');
 
-</script></body>
+  if (file) {
+    fileInfo.classList.remove('hidden');
+    fileName.textContent = file.name;
+    fileSize.textContent = formatFileSize(file.size);
+
+    const validation = validateFile(file);
+    if (!validation.valid) {
+      showToast(validation.error, 'warning');
+      e.target.value = '';
+      fileInfo.classList.add('hidden');
+    }
+  } else {
+    fileInfo.classList.add('hidden');
+  }
+});
+
+function formatFileSize(bytes) {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+// ==================== UPLOAD ====================
+window.uploadSong = async function() {
+  const now = Date.now();
+  if (now - lastUpload < UPLOAD_COOLDOWN) {
+    const wait = Math.ceil((UPLOAD_COOLDOWN - (now - lastUpload)) / 1000);
+    showToast(`Please wait ${wait} seconds before uploading again`, 'warning');
+    return;
+  }
+
+  const titleInput = document.getElementById('songTitle');
+  const artistInput = document.getElementById('songArtist');
+  const genreInput = document.getElementById('songGenre');
+  const fileInput = document.getElementById('songFile');
+
+  const title = sanitizeInput(titleInput.value.trim());
+  const artist = sanitizeInput(artistInput.value.trim());
+  const genre = genreInput.value;
+  const file = fileInput.files[0];
+
+  // Validation
+  if (!title) {
+    showToast('Please enter a song title', 'warning');
+    titleInput.focus();
+    return;
+  }
+
+  if (!file) {
+    showToast('Please select an audio file', 'warning');
+    return;
+  }
+
+  const fileValidation = validateFile(file);
+  if (!fileValidation.valid) {
+    showToast(fileValidation.error, 'warning');
+    return;
+  }
+
+  setButtonLoading('uploadBtn', true);
+  const progressBar = document.getElementById('uploadProgress');
+  const progressFill = document.getElementById('progressFill');
+  const statusText = document.getElementById('uploadStatus');
+
+  progressBar.classList.remove('hidden');
+  statusText.textContent = 'Uploading...';
+
+  try {
+    // Create safe filename
+    const safeName = title.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+    const timestamp = Date.now();
+    const ext = file.name.split('.').pop();
+    const fileName = `songs/${safeName}_${timestamp}.${ext}`;
+
+    const storageRef = ref(storage, fileName);
+    const uploadTask = uploadBytesResumable(storageRef, file);
+
+    // Monitor progress
+    uploadTask.on('state_changed',
+      (snapshot) => {
+        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+        progressFill.style.width = progress + '%';
+        statusText.textContent = `Uploading... ${Math.round(progress)}%`;
+      },
+      (error) => {
+        showToast('Upload failed: ' + error.message, 'error');
+        setButtonLoading('uploadBtn', false);
+        progressBar.classList.add('hidden');
+        progressFill.style.width = '0%';
+        statusText.textContent = '';
+      }
+    );
+
+    await uploadTask;
+    const url = await getDownloadURL(storageRef);
+    const metadata = await getMetadata(storageRef);
+
+    // Save to Firestore
+    await addDoc(collection(db, 'songs'), {
+      title,
+      artist: artist || 'Unknown Artist',
+      genre: genre || 'Uncategorized',
+      url,
+      storagePath: fileName,
+      fileSize: metadata.size,
+      contentType: metadata.contentType,
+      plays: 0,
+      createdAt: serverTimestamp(),
+      uploadedBy: currentUser.email,
+      uploadedByUid: currentUser.uid
+    });
+
+    lastUpload = Date.now();
+
+    // Reset form
+    titleInput.value = '';
+    artistInput.value = '';
+    genreInput.value = '';
+    fileInput.value = '';
+    document.getElementById('fileInfo').classList.add('hidden');
+    progressBar.classList.add('hidden');
+    progressFill.style.width = '0%';
+    statusText.textContent = '';
+
+    showToast('Track uploaded successfully!', 'success');
+
+    // Refresh data
+    loadStats();
+    loadSongs();
+
+  } catch (error) {
+    showToast('Error: ' + error.message, 'error');
+    statusText.textContent = 'Upload failed';
+  } finally {
+    setButtonLoading('uploadBtn', false);
+  }
+};
+
+// ==================== STATS ====================
+async function loadStats() {
+  try {
+    const songsSnap = await getDocs(collection(db, 'songs'));
+    const totalSongs = songsSnap.size;
+
+    let totalPlays = 0;
+    let totalSize = 0;
+    let uploadsToday = 0;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    songsSnap.forEach(doc => {
+      const data = doc.data();
+      totalPlays += data.plays || 0;
+      totalSize += data.fileSize || 0;
+
+      if (data.createdAt) {
+        const created = data.createdAt.toDate ? data.createdAt.toDate() : new Date(data.createdAt);
+        if (created >= today) uploadsToday++;
+      }
+    });
+
+    // Animate numbers
+    animateNumber('statTotalSongs', totalSongs);
+    animateNumber('statTotalPlays', totalPlays);
+    animateNumber('statUploadsToday', uploadsToday);
+    animateNumber('statStorageUsed', Math.round(totalSize / 1024 / 1024 * 100) / 100);
+
+  } catch (error) {
+    console.error('Stats error:', error);
+  }
+}
+
+function animateNumber(elementId, target) {
+  const el = document.getElementById(elementId);
+  const start = parseInt(el.textContent) || 0;
+  const duration = 800;
+  const startTime = performance.now();
+
+  function update(currentTime) {
+    const elapsed = currentTime - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    const ease = 1 - Math.pow(1 - progress, 3);
+    const current = Math.round(start + (target - start) * ease);
+
+    if (elementId === 'statStorageUsed') {
+      el.textContent = current.toFixed(2);
+    } else {
+      el.textContent = current.toLocaleString();
+    }
+
+    if (progress < 1) {
+      requestAnimationFrame(update);
+    }
+  }
+
+  requestAnimationFrame(update);
+}
+
+// ==================== SONGS LIBRARY ====================
+window.loadSongs = async function() {
+  setLoading(true);
+
+  try {
+    const q = query(collection(db, 'songs'), orderBy('createdAt', 'desc'));
+    const snap = await getDocs(q);
+
+    songsData = [];
+    snap.forEach(doc => {
+      songsData.push({ id: doc.id, ...doc.data() });
+    });
+
+    renderSongs();
+
+  } catch (error) {
+    showToast('Failed to load songs: ' + error.message, 'error');
+  } finally {
+    setLoading(false);
+  }
+};
+
+function renderSongs() {
+  const container = document.getElementById('songsContainer');
+
+  if (songsData.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <div class="icon">🎼</div>
+        <h3>No tracks yet</h3>
+        <p>Upload your first song to get started</p>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = '<div class="songs-grid">' + 
+    songsData.map(song => {
+      const date = song.createdAt ? 
+        (song.createdAt.toDate ? song.createdAt.toDate() : new Date(song.createdAt)).toLocaleDateString() : 
+        'Unknown date';
+
+      return `
+        <div class="song-card" id="song-${song.id}">
+          <div class="song-header">
+            <div>
+              <div class="song-title">${song.title}</div>
+              <div class="song-meta">${song.artist || 'Unknown Artist'} • ${song.genre || 'Uncategorized'} • ${date}</div>
+            </div>
+            <div class="song-plays">
+              <span>▶</span> ${(song.plays || 0).toLocaleString()}
+            </div>
+          </div>
+
+          <audio controls class="audio-player" id="audio-${song.id}" src="${song.url}" preload="none"></audio>
+
+          <div class="song-actions">
+            <button class="btn btn-primary btn-sm" onclick="playSong('${song.id}')">
+              ▶ Play
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="copyLink('${song.url}')">
+              📋 Link
+            </button>
+            <button class="btn btn-danger btn-sm" onclick="deleteSong('${song.id}', '${song.storagePath}')">
+              🗑️ Delete
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('') + 
+  '</div>';
+}
+
+window.playSong = async function(songId) {
+  const audio = document.getElementById(`audio-${songId}`);
+  if (!audio) return;
+
+  // Pause all other audio
+  document.querySelectorAll('audio').forEach(a => {
+    if (a !== audio) a.pause();
+  });
+
+  if (audio.paused) {
+    audio.play();
+
+    // Increment play count
+    try {
+      await updateDoc(doc(db, 'songs', songId), {
+        plays: increment(1)
+      });
+
+      // Update local data
+      const song = songsData.find(s => s.id === songId);
+      if (song) {
+        song.plays = (song.plays || 0) + 1;
+        renderSongs();
+      }
+    } catch (error) {
+      console.error('Play count error:', error);
+    }
+  } else {
+    audio.pause();
+  }
+};
+
+window.copyLink = async function(url) {
+  try {
+    await navigator.clipboard.writeText(url);
+    showToast('Link copied to clipboard!', 'success');
+  } catch (error) {
+    showToast('Failed to copy link', 'error');
+  }
+};
+
+window.deleteSong = async function(songId, storagePath) {
+  if (!confirm('Are you sure you want to delete this track? This action cannot be undone.')) {
+    return;
+  }
+
+  setLoading(true);
+
+  try {
+    // Delete from Storage
+    if (storagePath) {
+      const storageRef = ref(storage, storagePath);
+      await deleteObject(storageRef);
+    }
+
+    // Delete from Firestore
+    await deleteDoc(doc(db, 'songs', songId));
+
+    showToast('Track deleted successfully', 'success');
+
+    // Refresh
+    loadStats();
+    loadSongs();
+
+  } catch (error) {
+    showToast('Error deleting track: ' + error.message, 'error');
+    setLoading(false);
+  }
+};
+
+// ==================== KEYBOARD SHORTCUTS ====================
+document.addEventListener('keydown', (e) => {
+  // Ctrl/Cmd + Enter to upload when in dashboard
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+    if (!document.getElementById('dashboardView').classList.contains('hidden')) {
+      uploadSong();
+    }
+  }
+
+  // Escape to close any modals or pause audio
+  if (e.key === 'Escape') {
+    document.querySelectorAll('audio').forEach(a => a.pause());
+  }
+});
+
+// ==================== INIT ====================
+// Check for existing auth on page load
+setLoading(true);
+</script>
+</body>
 </html>
